@@ -33,8 +33,8 @@ Instruction types:
 
 '''
 
-NUGGETS_DIR = 'data/nuggets'
-CURRENT_DIR = 'data/current'
+NUGGETS_DIR = 'miner/data/nuggets'
+CURRENT_DIR = 'miner/data/current'
 
 
 
@@ -81,7 +81,7 @@ class Blockchain:
         self.persistent_storage = PersistentStorage(self, 'blockchain_data')
         self.mining = Mining(self)
 
-        if not self.persistent_storage.load_data():
+        if not self.persistent_storage.load_data(): 
             # Create the genesis block (assuming that for now we're the first to exist)
             self.mining.new_block(previous_hash='1', proof=100)
 
