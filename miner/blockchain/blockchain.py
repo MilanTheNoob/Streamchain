@@ -1,17 +1,10 @@
-from ecdsa import VerifyingKey, BadSignatureError, SECP256k1
-import lmdb
-import hashlib
-import json
-from time import time
-from urllib.parse import urlparse
-import requests
-
 from miner.blockchain.enums.verbosity import Verbosity
-
-import miner.blockchain.utilities.crypto as crypto
 
 from miner.blockchain.state.storage import PersistentStorage
 from miner.blockchain.state.mining import Mining
+from miner.blockchain.state.transacting import Transacting
+from miner.blockchain.state.accounting import Accounting
+from miner.blockchain.state.networking import Networking
 
 '''
 
@@ -36,14 +29,16 @@ Instruction types:
 NUGGETS_DIR = 'miner/data/nuggets'
 CURRENT_DIR = 'miner/data/current'
 
-
-
 class Blockchain:
     '''
     
     (Intended) available functionality:
 
     # general
+    - keypair
+        - load_or_create_keypair
+        - create_generic_tx
+        - create_mine_reward_tx
     - utilities
         - crypto    
             - hash
@@ -80,104 +75,17 @@ class Blockchain:
 
         self.persistent_storage = PersistentStorage(self, 'blockchain_data')
         self.mining = Mining(self)
+        self.transacting = Transacting(self)
+        self.accounting = Accounting(self)
+        self.networking = Networking(self)
+
+        # CONSTANTS
+        self.MINE_REWARD_AMOUNT = 1
 
         if not self.persistent_storage.load_data(): 
             # Create the genesis block (assuming that for now we're the first to exist)
             self.mining.new_block(previous_hash='1', proof=100)
-
-    def register_node(self, address):
-        """
-        Add a new node to the list of nodes
-
-        :param address: Address of node. Eg. 'http://192.168.0.5:5000'
-        """
-
-        parsed_url = urlparse(address)
-        if parsed_url.netloc:
-            self.nodes.add(parsed_url.netloc)
-        elif parsed_url.path:
-            # Accepts an URL without scheme like '192.168.0.5:5000'.
-            self.nodes.add(parsed_url.path)
-        else:
-            raise ValueError('Invalid URL')
     
-    def new_transaction(self, tx):
-
-        tx_data = {
-            'sender': tx['sender'],
-            'type': tx['type'],
-            'data': tx['data']
-        }
-
-        if not crypto.verify_signature(tx['sender'], tx['signature'], tx_data):
-            raise ValueError("Invalid signature")
-
-        self.current_transactions.append({
-            'sender': tx['sender'],
-            'signature': tx['signature'],
-            'type': tx['type'],
-            'data': tx['data']
-        })
-
-        return self.last_block['index'] + 1
-        
-    def process_transaction(self, tx):
-        tx_type = tx['type']
-        data = tx['data']
-
-        if tx_type == 'start_livestream':
-            stream_id = Blockchain.derive_sda(tx['sender'], data['stream_id'])
-            initial_funds = data['initial_funds']
-            print(f"Started livestream at {stream_id} with {initial_funds} funds")
-
-            self.livestreams[stream_id] = {'funds': initial_funds}
-
-        elif tx_type == 'add_chunk':
-            stream_id = Blockchain.derive_sda(tx['sender'], data['stream_id'])
-            #chunk_hash = data['chunk_hash']
-            #chunk_index = data['chunk_index']
-            #print(f"Added chunk {chunk_index} with hash {chunk_hash} to {stream_id}")
-
-        elif tx_type == 'add_funds':
-            stream_id = Blockchain.derive_sda(tx['sender'], data['stream_id'])
-            funds = data['amount']
-            print(f"Added {funds} funds to {stream_id}")
-
-        elif tx_type.startswith('transfer'):
-            print(f"Transfer {data['amount']} from {tx['sender']} to {data['recipient']}")
-
-            sender_balance = self.get_wallet_balance(tx['sender'])
-            recipient_balance = self.get_wallet_balance(data['recipient'])
-
-            if sender_balance < data['amount'] and tx_type != 'transfer.mine_reward':
-                raise ValueError("Not enough funds to transfer")
-
-            data['balances'] = {
-                tx['sender']: sender_balance - data['amount'],
-                data['recipient']: recipient_balance + data['amount']
-            }
-
-            if tx_type == 'transfer.mine_reward':
-                print(f"Received miner reward of {data['amount']} from {tx['sender']}")
-
-        else:
-            print("Unknown transaction type:", tx_type)
-
-    def get_wallet_balance(self, pubkey_hex):
-        balance = 0
-        # Iterate backwards through chain
-        for block in reversed(self.chain):
-            for tx in block['transactions']:
-                if tx['type'].startswith('transfer'):
-                    try:
-                        balance = tx['data']['balances'][pubkey_hex]
-                    except:
-                        pass
-        return balance
-
     @property
     def last_block(self):
-        print(self.chain)
         return self.chain[-1]
-
-

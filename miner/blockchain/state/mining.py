@@ -1,17 +1,7 @@
 import typing, requests, time, json
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
 
+import miner.blockchain.utilities.crypto as crypto
 from miner.blockchain.utilities.proof import valid_chain
-
-def sha256_hash(obj: typing.Any) -> str:
-    """
-    Deterministically serialize an object and return a SHA-256 hex digest.
-    """
-    digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-    serialized = json.dumps(obj, sort_keys=True).encode()
-    digest.update(serialized)
-    return digest.finalize().hex()
 
 class Mining:
     def __init__(self, parent):
@@ -54,11 +44,19 @@ class Mining:
             'timestamp': time.time(),
             'transactions': self.parent.current_transactions,
             'proof': proof,
-            'previous_hash': previous_hash or sha256_hash(self.parent.chain[-1]),
+            'previous_hash': previous_hash or crypto.hash(self.parent.chain[-1]),
         }
+
+        has_reward_tx = 0 # Counter of how many transfer.mine_reward exist, we are only to allow one to exist
 
         for tx in self.parent.current_transactions:
             self.parent.transacting.process_transaction(tx)
+
+            if tx['type'] == 'transfer.mine_reward':
+                has_reward_tx += 1
+
+        if has_reward_tx != 1:
+            raise ValueError("There should only be one transfer.mine_reward transaction per block")
 
         self.parent.current_transactions = []
         self.parent.chain.append(block)
