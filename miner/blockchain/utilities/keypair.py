@@ -1,4 +1,4 @@
-import os
+import os, hashlib
 from enum import Enum
 import json
 import appdirs
@@ -23,7 +23,7 @@ def load_or_create_keypair(keypair_file: str = DEFAULT_KEYPAIR_FILE) -> Tuple[Si
             data = json.load(f)
             private_key = SigningKey.from_string(bytes.fromhex(data['private_key']), curve=SECP256k1)
             public_key = private_key.get_verifying_key()
-            print("Loaded existing keypair.")
+            #print("Loaded existing keypair.")
     else:
         private_key = SigningKey.generate(curve=SECP256k1)
         public_key = private_key.get_verifying_key()
@@ -32,7 +32,7 @@ def load_or_create_keypair(keypair_file: str = DEFAULT_KEYPAIR_FILE) -> Tuple[Si
                 'private_key': private_key.to_string().hex(),
                 'public_key': public_key.to_string().hex()
             }, f)
-        print("Generated new keypair.")
+        #print("Generated new keypair.")
 
     return private_key, public_key
 
@@ -53,7 +53,7 @@ def create_mine_reward_tx(miner_keypair: Tuple[SigningKey, VerifyingKey]) -> tx_
             "recipient":miner_keypair[1].to_string().hex(),
             "amount":1,
         },
-        "type": "transfer.mine_reward"
+        "type": "transfer_mine_reward"
     }
 
     sign_transaction(tx, miner_keypair)
@@ -74,6 +74,44 @@ def create_generic_tx(sender_keypair: Tuple[SigningKey, VerifyingKey], receiver_
         'data': {
             'amount': amount,
             'recipient': receiver_pubkey.to_string().hex()
+        }
+    }
+
+    sign_transaction(tx_data, sender_keypair)
+
+    return tx_data
+
+def create_start_livestream_tx(
+        sender_keypair: Tuple[SigningKey, VerifyingKey] = load_or_create_keypair(), 
+        stream_name: str = 'default_livestream', 
+        initial_funds: int = 5
+    ) -> tx_types.TransactionObject:
+    
+    tx_data = {
+        'type': TransactionType.START_LIVESTREAM,
+        'sender': sender_keypair[1].to_string().hex(),
+        'data': {
+            'stream_name': stream_name,
+            'initial_funds': initial_funds
+        }
+    }
+
+    sign_transaction(tx_data, sender_keypair)
+
+    return tx_data
+
+def add_livestream_chunk_tx(
+        chunk_hash: str,
+        sender_keypair: Tuple[SigningKey, VerifyingKey] = load_or_create_keypair(), 
+        stream_id: str = hashlib.sha256(b'default_livestream').hexdigest(),
+    ) -> tx_types.TransactionObject:
+    
+    tx_data = {
+        'type': TransactionType.ADD_CHUNK,
+        'sender': sender_keypair[1].to_string().hex(),
+        'data': {
+            'stream_id': stream_id,
+            'chunk_hash': chunk_hash
         }
     }
 

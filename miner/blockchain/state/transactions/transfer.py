@@ -2,8 +2,15 @@ import miner.blockchain.utilities.sanitizing as sanitizing
 
 def transfer(blockchain, data, sender):
     print(f"Transfer {data['amount']} from {sanitizing.shorten_pubkey(sender)} to {sanitizing.shorten_pubkey(data['recipient'])}")
-
+    
     sender_balance = blockchain.accounting.get_wallet_balance(sender)
+
+    if sender == data['recipient']:
+        data['balances'] = {
+            sender: sender_balance
+        }
+        return
+
     recipient_balance = blockchain.accounting.get_wallet_balance(data['recipient'])
 
     if sender_balance < data['amount']:

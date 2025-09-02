@@ -1,0 +1,1 @@
+This documentation is built and hosted on [my portfolio](https://milanmachacek.com), the main page is [[Streamchain Documentation]]

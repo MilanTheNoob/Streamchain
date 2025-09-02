@@ -7,8 +7,10 @@ if __name__ == '__main__':
 
     from miner.tests.state.mining import MiningTest
     from miner.tests.state.transacting.transfer import TransactingTransferTest
+    from miner.tests.state.streaming import StreamingTest
 
     suite.addTests(test_loader.loadTestsFromTestCase(MiningTest))
     suite.addTests(test_loader.loadTestsFromTestCase(TransactingTransferTest))
+    suite.addTests(test_loader.loadTestsFromTestCase(StreamingTest))
 
     unittest.TextTestRunner(verbosity=2).run(suite)

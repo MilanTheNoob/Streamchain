@@ -1,0 +1,4 @@
+import miner.blockchain.utilities.crypto as crypto
+
+#print(crypto.derive_sda("8f90c6cf50f8b99001032919931f45426148ae02eaa4110ff70c1b01147ae18e823780928fb3590cb58ab1bf1b1013bc6f0a92f042d3cc99e5f2953cd07f887d", "stream_68"))
+print(crypto.derive_sda("stream_68", "8f90c6cf50f8b99001032919931f45426148ae02eaa4110ff70c1b01147ae18e823780928fb3590cb58ab1bf1b1013bc6f0a92f042d3cc99e5f2953cd07f887d"))

@@ -1,5 +1,7 @@
 from miner.blockchain.enums.verbosity import Verbosity
 
+from miner.blockchain.constants import *
+
 from miner.blockchain.state.storage import PersistentStorage
 from miner.blockchain.state.mining import Mining
 from miner.blockchain.state.transacting import Transacting
@@ -26,8 +28,7 @@ Instruction types:
 
 '''
 
-NUGGETS_DIR = 'miner/data/nuggets'
-CURRENT_DIR = 'miner/data/current'
+
 
 class Blockchain:
     '''
@@ -39,6 +40,8 @@ class Blockchain:
         - load_or_create_keypair
         - create_generic_tx
         - create_mine_reward_tx
+        - create_start_livestream_tx
+        - sign_transaction
     - utilities
         - crypto    
             - hash
@@ -57,19 +60,23 @@ class Blockchain:
         - accounting
             - get_wallet_balance
             - get_account
+            - get_chain_account
         - transacting
             - new_transaction
             - process_transaction
+            - new_multiple_transactions
+            - find_transaction_by_id
+            - find_transaction_by_signature
         - networking
             - register_node
         
     '''
 
-    def __init__(self, verbosity = Verbosity.NORMAL):
-        self.current_transactions = []
-        self.chain = []
-        self.livestreams = {}
-        self.nodes = set()
+    def __init__(self, verbosity = Verbosity.NORMAL, event_handler = None):
+        self.current_transactions = [] # Mempool
+        self.chain = [] # chain
+        self.nodes = set() # our connections to other people
+        self.event_handler = event_handler
 
         self.verbosity = verbosity
 

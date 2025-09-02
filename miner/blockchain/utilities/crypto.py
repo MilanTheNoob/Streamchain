@@ -40,3 +40,11 @@ def derive_sda(owner_pubkey: str, stream_id: str):
     
     combined = f"{owner_pubkey}:{stream_id}".encode()
     return hashlib.sha256(combined).hexdigest()
+
+def hash_file(file_path: str) -> str:
+    """
+    Hash a file
+    """
+    
+    with open(file_path, 'rb') as f:
+        return hashlib.sha256(f.read()).hexdigest()

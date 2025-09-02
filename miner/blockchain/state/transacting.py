@@ -43,8 +43,16 @@ class Transacting:
             TransactionType.ADD_CHUNK: transactions.add_chunk,
             TransactionType.ADD_FUNDS: transactions.add_funds,
             TransactionType.TRANSFER: transactions.transfer,
-            TransactionType.TRANSFER_MINE_REWARD: transactions.mine_reward
+            TransactionType.TRANSFER_MINE_REWARD: transactions.mine_reward,
+            TransactionType.CHALLENGE_STORER: transactions.challenge_storer 
         }
 
         transactions_dict[TransactionType(tx_type)](self.parent, data, tx['sender'])
-       
+    
+    def get_transaction(self, signature: str) -> typing.Dict[str, typing.Any]:
+        for block in reversed(self.parent.chain):
+            for tx in block['transactions']:
+                if tx['signature'] == signature:
+                    return tx
+                
+        return None
